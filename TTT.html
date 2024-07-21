@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    #players {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    #players input {
+      font-size: 16px;
+      padding: 8px;
+      margin: 0 10px;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      grid-gap: 5px;
+      margin: 20px auto;
+    }
+
+    .cell {
+      background-color: #4CAF50;
+      color: #fff;
+      font-size: 36px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .cell:hover {
+      background-color: #45a049;
+    }
+
+    #message {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    #scores {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+
+    #scores div {
+      font-size: 16px;
+    }
+
+    button {
+      font-size: 16px;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tic Tac Toe</h1>
+    <div id="players">
+      <input type="text" id="player1" placeholder="Player 1 (X)">
+      <input type="text" id="player2" placeholder="Player 2 (O)">
+    </div>
+    <div id="board">
+      <!-- Board cells will be dynamically generated here -->
+    </div>
+    <div id="message">Enter player names and start the game</div>
+    <div id="scores">
+      <div id="player1-score">Player 1 (X): <span>0</span></div>
+      <div id="player2-score">Player 2 (O): <span>0</span></div>
+    </div>
+    <button id="reset-btn">Reset Game</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const board = document.getElementById('board');
+      const cells = [];
+      const messageElement = document.getElementById('message');
+      const player1Input = document.getElementById('player1');
+      const player2Input = document.getElementById('player2');
+      const player1ScoreDisplay = document.querySelector('#player1-score span');
+      const player2ScoreDisplay = document.querySelector('#player2-score span');
+      const resetButton = document.getElementById('reset-btn');
+
+      let currentPlayer;
+      let gameActive;
+      let moves;
+      let boardSize = 3; // Default board size
+      let boardState;
+      let winningConditions;
+
+      // Initialize the game
+      function init() {
+        currentPlayer = 'X';
+        gameActive = true;
+        moves = 0;
+        boardState = new Array(boardSize * boardSize).fill('');
+        winningConditions = generateWinningConditions();
+        
+        // Display player names
+        messageElement.textContent = `${player1Input.value} (X) vs ${player2Input.value} (O)`;
+        
+        // Clear board
+        board.innerHTML = '';
+        cells.length = 0;
+        
+        // Create board cells
+        for (let i = 0; i < boardSize * boardSize; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.id = `cell-${i}`;
+          cell.style.width = `${100 / boardSize}%`;
+          cell.style.height = `${100 / boardSize}%`;
+          cell.addEventListener('click', () => handleCellClick(i));
+          board.appendChild(cell);
+          cells.push(cell);
+        }
+      }
+
+      // Handle cell click event
+      function handleCellClick(index) {
+        if (!gameActive || boardState[index] !== '') return;
+
+        // Update board state
+        boardState[index] = currentPlayer;
+        cells[index].textContent = currentPlayer;
+        moves++;
+
+        // Check for win or draw
+        if (checkWin()) {
+          messageElement.textContent = `Player ${currentPlayer} wins!`;
+          updateScore(currentPlayer);
+          gameActive = false;
+        } else if (moves === boardSize * boardSize) {
+          messageElement.textContent = 'It\'s a draw!';
+          gameActive = false;
+        } else {
+          // Switch player turn
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+          messageElement.textContent = `Player ${currentPlayer}'s turn`;
+        }
+      }
+
+      // Check for win conditions
+      function checkWin() {
+        return winningConditions.some(condition => {
+          return condition.every(index => {
+            return boardState[index] === currentPlayer;
+          });
+        });
+      }
+
+      // Update player scores
+      function updateScore(player) {
+        if (player === 'X') {
+          player1ScoreDisplay.textContent = parseInt(player1ScoreDisplay.textContent) + 1;
+        } else if (player === 'O') {
+          player2ScoreDisplay.textContent = parseInt(player2ScoreDisplay.textContent) + 1;
+        }
+      }
+
+      // Generate winning conditions for current board size
+      function generateWinningConditions() {
+        const conditions = [];
+
+        // Rows
+        for (let i = 0; i < boardSize; i++) {
+          conditions.push(Array.from({ length: boardSize }, (_, index) => i * boardSize + index));
+        }
+
+        // Columns
+        for (let i = 0; i < boardSize; i++) {
+          conditions.push(Array.from({ length: boardSize }, (_, index) => i + index * boardSize));
+        }
+
+        // Diagonals
+        conditions.push(Array.from({ length: boardSize }, (_, index) => index * (boardSize + 1))); // Main diagonal
+        conditions.push(Array.from({ length: boardSize }, (_, index) => (index + 1) * (boardSize - 1))); // Anti-diagonal
+
+        return conditions;
+      }
+
+      // Reset game button
+      resetButton.addEventListener('click', () => {
+        boardSize = parseInt(prompt('Enter board size (3-5)', '3')) || 3;
+        if (boardSize < 3 || boardSize > 5) {
+          alert('Board size must be between 3 and 5.');
+          return;
+        }
+        init();
+      });
+
+      // Initialize the game on page load
+      init();
+    });
+  </script>
+</body>
+</html>
