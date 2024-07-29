@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced JavaScript Graphics Project</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #222;
+    }
+    canvas {
+      display: block;
+    }
+    #controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    #controls h3 {
+      margin-top: 0;
+    }
+    #controls label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    #colorControls {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!--HTML5 canvas for particle sysytem -->
+<canvas id="myCanvas"></canvas>
+
+<!-- Controls Panel -->
+<div id="controls">
+  <h3>Particle System Controls</h3>
+  <label for="numParticles">Number of Particles:</label>
+  <input type="range" id="numParticles" min="100" max="2000" value="1000">
+  <br>
+  <label for="particleSize">Particle Size:</label>
+  <input type="range" id="particleSize" min="1" max="5" step="0.1" value="2">
+  <br>
+  <label for="gravity">Gravity:</label>
+  <input type="range" id="gravity" min="0" max="0.5" step="0.01" value="0.1">
+  <br>
+  <label for="friction">Friction:</label>
+  <input type="range" id="friction" min="0.9" max="0.999" step="0.001" value="0.98">
+  <br>
+  <label for="trailLength">Particle Trail Length:</label>
+  <input type="range" id="trailLength" min="0" max="50" value="20">
+  
+  <!-- Additional controls for colors and opacity -->
+  <div id="colorControls">
+    <label for="colorRed">Red Color:</label>
+    <input type="range" id="colorRed" min="0" max="255" value="128">
+    <br>
+    <label for="colorGreen">Green Color:</label>
+    <input type="range" id="colorGreen" min="0" max="255" value="128">
+    <br>
+    <label for="colorBlue">Blue Color:</label>
+    <input type="range" id="colorBlue" min="0" max="255" value="128">
+    <br>
+    <label for="particleOpacity">Particle Opacity:</label>
+    <input type="range" id="particleOpacity" min="0.1" max="1" step="0.1" value="0.8">
+  </div>
+</div>
+
+<script>
+  // Get the canvas elements and context
+  const canvas = document.getElementById('myCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Set canvas dimensions
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  // Particle properties
+  let particles = [];
+  let numParticles = 1000;
+  let particleSize = 2;
+  let gravity = 0.1;
+  let friction = 0.98;
+  let trailLength = 20;
+  let particleOpacity = 0.8;
+  let colorRed = 128;
+  let colorGreen = 128;
+  let colorBlue = 128;
+
+  // Create particles with random properties
+  function createParticles() {
+    particles = [];
+    for (let i = 0; i < numParticles; i++) {
+      let particle = {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * particleSize + 1,
+        dx: (Math.random() - 0.5) * 2,
+        dy: (Math.random() - 0.5) * 2,
+        color: `rgba(${colorRed}, ${colorGreen}, ${colorBlue}, ${particleOpacity}`,
+        friction: friction,
+        gravity: gravity,
+        trail: []
+      };
+      particles.push(particle);
+    }
+  }
+
+  // Function to draw a particle with trail
+  function drawParticle(particle) {
+    // Draw particle trail
+    particle.trail.push({ x: particle.x, y: particle.y });
+    if (particle.trail.length > trailLength) {
+      particle.trail.shift(); // Remove oldest trail point
+    }
+
+    // Draw a particle
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+    ctx.fillStyle = particle.color;
+    ctx.fill();
+    ctx.closePath();
+
+    // Draw particle trail length
+    ctx.beginPath();
+    ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
+    for (let j = 1; j < particle.trail.length; j++) {
+      ctx.lineTo(particle.trail[j].x, particle.trail[j].y);
+    }
+    ctx.strokeStyle = particle.color;
+    ctx.lineWidth = particle.radius;
+    ctx.stroke();
+    ctx.closePath();
+  }
+
+  // Update function with physics simulation
+  function update() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw and update particles
+    particles.forEach(particle => {
+      drawParticle(particle);
+
+      // Apply gravity
+      particle.dy += particle.gravity;
+
+      // Apply friction
+      particle.dx *= particle.friction;         
+      particle.dy *= particle.friction;        
+                    
+      // Move particle
+      particle.x += particle.dx;
+      particle.y += particle.dy;
+
+      // Bounce off walls
+      if (particle.x + particle.radius > canvas.width) {
+        particle.x = canvas.width - particle.radius;
+        particle.dx = -particle.dx * particle.friction;
+      }
+      if (particle.x - particle.radius < 0) {
+        particle.x = particle.radius;
+        particle.dx = -particle.dx * particle.friction;
+      }
+      if (particle.y + particle.radius > canvas.height) {
+        particle.y = canvas.height - particle.radius;
+        particle.dy = -particle.dy * particle.friction; // Elastic collision with ground
+        if (Math.abs(particle.dy) < 1) {
+          particle.dy = 0;
+        }
+      }
+      if (particle.y - particle.radius < 0) {
+        particle.y = particle.radius;
+        particle.dy = -particle.dy * particle.friction;
+      }
+
+      // Collision with other particles (elastic collision)
+      particles.forEach(p => {
+        if (p !== particle) {
+          let dx = particle.x - p.x;
+          let dy = particle.y - p.y;
+          let distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < particle.radius + p.radius) {
+            
+            // Elastic collision response
+            let angle = Math.atan2(dy, dx);
+            let sine = Math.sin(angle);
+            let cosine = Math.cos(angle);
+
+            // Rotatate particle velocities
+            let vx1 = particle.dx * cosine + particle.dy * sine;
+            let vy1 = particle.dy * cosine - particle.dx * sine;
+            let vx2 = p.dx * cosine + p.dy * sine;
+            let vy2 = p.dy * cosine - p.dx * sine;
+
+            // Swap particle velocities for realistic bounce
+            particle.dx = vx2 * particle.friction;
+            particle.dy = vy2 * particle.friction;
+            p.dx = vx1 * particle.friction;
+            p.dy = vy1 * particle.friction;
+
+            // Prevent overlap
+            let overlap = particle.radius + p.radius - distance + 1;
+            particle.x += overlap * Math.cos(angle);
+            particle.y += overlap * Math.sin(angle);
+          }
+        }
+      });
+    });
+
+    // Request for animation frame
+    requestAnimationFrame(update);
+  }
+
+  // Mouse position
+  let mouse = { x: 0, y: 0 };
+
+  // Events listeners for controls
+  document.getElementById('numParticles').addEventListener('input', function(event) {
+    numParticles = event.target.value;
+    createParticles();
+  });
+
+  document.getElementById('particleSize').addEventListener('input', function(event) {
+    particleSize = event.target.value;
+    createParticles();
+  });
+
+  document.getElementById('gravity').addEventListener('input', function(event) {
+    gravity = parseFloat(event.target.value);
+    createParticles();
+  });
+
+  document.getElementById('friction').addEventListener('input', function(event) {
+    friction = parseFloat(event.target.value);
+    createParticles();
+  });
+
+  document.getElementById('trailLength').addEventListener('input', function(event) {
+    trailLength = parseInt(event.target.value);
+  });
+
+  document.getElementById('colorRed').addEventListener('input', function(event) {
+    colorRed = event.target.value;
+    createParticles();
+  });
+
+  document.getElementById('colorGreen').addEventListener('input', function(event) {
+    colorGreen = event.target.value;
+    createParticles();
+  });
+
+  document.getElementById('colorBlue').addEventListener('input', function(event) {
+    colorBlue = event.target.value;
+    createParticles();
+  });
+
+  document.getElementById('particleOpacity').addEventListener('input', function(event) {
+    particleOpacity = parseFloat(event.target.value);
+    createParticles();
+  });
+
+  // Mouse move event listeners
+  canvas.addEventListener('mousemove', function(event) {
+    mouse.x = event.clientX;
+    mouse.y = event.clientY;
+
+    // Create particles on mouse movement
+    for (let i = 0; i < 5; i++) {
+      let particle = {
+        x: mouse.x,
+        y: mouse.y,
+        radius: Math.random() * particleSize + 1,
+        dx: (Math.random() - 0.5) * 5,
+        dy: (Math.random() - 0.5) * 5,
+        color: `rgba(${colorRed}, ${colorGreen}, ${colorBlue}, ${particleOpacity})`,
+        friction: friction,
+        gravity: gravity,
+        trail: []
+      };
+      particles.push(particle);
+    }
+  });
+
+  // Initial setup
+  createParticles();
+  update();
+
+</script>
+
+</body>
+</html>
+
+<!--------------------------------------------Acknowledge Me------------------------------------------->
