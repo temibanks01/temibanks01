@@ -35,7 +35,7 @@
   }
   
   .analog-clock::before{
-    content:'Ajanta';
+    content:'T.Banks';
     color: var(--theme-color);
     position: absolute;
     top: 20%;
