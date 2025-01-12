@@ -6,9 +6,9 @@
 Here are some ideas to get you started:
 
 - 🔭 I’m currently a Web developer and designer
-- 🌱 I’m currently learning ...Web designing and Web hoisting
+- 🌱 I’m currently learning ...Web designing and Web Development 
 - 👯 I’m looking to collaborate on .with fellow Web developers
 - 📫 How to reach me: ... email: temiloluwabanks01@gmail.com
-- 😄 Pronouns: ...
+- 😄 Pronouns: he/him
 - ⚡ Fun fact: ...
 -->
